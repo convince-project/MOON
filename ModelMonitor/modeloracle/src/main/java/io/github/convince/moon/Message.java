@@ -29,7 +29,7 @@ public class Message {
     public Map<String, Object> getPayload() {
         Map<String, Object> payload = new HashMap<>();
         for (String key : this.data.keySet()) {
-            data.put("ros_fields__" + key, this.data.get(key));
+            payload.put("ros_fields__" + key, this.data.get(key));
         }
         return payload;
     }

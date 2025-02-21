@@ -90,7 +90,7 @@ public class Oracle extends WebSocketServer {
                 System.out.println("Event_name: " + this.messageHandler.toScxmlEventName(m) + " payload " + payload);
                 this.stateMachine.triggerEvent(this.messageHandler.toScxmlEventName(m), payload);
                 
-                Map<String, Object> dispatchedEvent = this.stateMachine.getDispatcher().waitForEvent(5);
+                Map<String, Object> dispatchedEvent = this.stateMachine.getDispatcher().waitForEvent(100);
                 String dispatchedEventName = (String) dispatchedEvent.keySet().toArray()[0];
                 Map<String, Object> dispatchedEventPayload = (Map<String, Object>) dispatchedEvent.values().toArray()[0];
                 m = this.messageHandler.fromScxmlEvent(dispatchedEventName, dispatchedEventPayload);
@@ -245,8 +245,8 @@ public class Oracle extends WebSocketServer {
             System.exit(1);
         }
 
-        // System.out.println(inputs);
-        // System.out.println(outputs);
+        System.out.println(inputs);
+        System.out.println(outputs);
 
         Oracle server = new Oracle(new InetSocketAddress(host, port), inputs, outputs, sm);
         server.run();

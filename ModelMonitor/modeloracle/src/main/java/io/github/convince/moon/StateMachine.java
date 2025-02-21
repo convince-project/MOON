@@ -72,8 +72,8 @@ public class StateMachine {
             return new Dispatcher();
         }
 
-        public Map<String, Object> waitForEvent(long timeoutSeconds) throws InterruptedException {
-            return dispatchedEvents.poll(timeoutSeconds, TimeUnit.SECONDS);
+        public Map<String, Object> waitForEvent(long timeoutMilliSeconds) throws InterruptedException {
+            return dispatchedEvents.poll(timeoutMilliSeconds, TimeUnit.MILLISECONDS);
         }
     }
 
