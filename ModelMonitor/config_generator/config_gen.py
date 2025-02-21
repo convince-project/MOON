@@ -64,6 +64,6 @@ if __name__ == "__main__":
     
     args = parser.parse_args()
     skill_name = parse_xml(args.scxml_path)["skill_name"]
-    monitor_ws = args.monitor_ws_path or os.path.expanduser(f"~/monitor_{skill_name}_ws")
-    log_path = args.log_path or os.path.expanduser(f"~/monitor_{skill_name}_ws")
+    monitor_ws = args.monitor_ws_path or os.path.expanduser(f"~/monitor_{skill_name}_ws/src")
+    log_path = args.log_path or os.path.expanduser(f"~/monitor_{skill_name}_ws/src")
     generate_monitor_files(args.scxml_path, monitor_ws, log_path, args.oracle_address, args.config_path)
