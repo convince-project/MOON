@@ -9,6 +9,8 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import org.java_websocket.WebSocket;
 import org.java_websocket.handshake.ClientHandshake;
@@ -34,9 +36,17 @@ public class Oracle extends WebSocketServer {
         this.stateMachine = stateMachine;
     }
 
+    public ArrayList<Message> getMonitoredMessages() {
+        return this.monitoredMessages;
+    }
+
+    public ArrayList<Message> getProducedMessages() {
+        return this.producedMessages;
+    }
+
     public boolean evaluate() {
-        System.out.println(monitoredMessages);
-        System.out.println(producedMessages);
+        // System.out.println(monitoredMessages);
+        // System.out.println(producedMessages);
         if (monitoredMessages.equals(producedMessages)) {
             return true;
         }
@@ -102,6 +112,8 @@ public class Oracle extends WebSocketServer {
 
         String verdict = null;
         try {
+            System.out.println(monitoredMessages);
+            System.out.println(producedMessages);
             verdict = (this.evaluate()) ? "currently_true" : "currently_false";
         } catch (Exception e) {
             System.out.println("Error in evaluation " + e.getMessage());
@@ -249,6 +261,12 @@ public class Oracle extends WebSocketServer {
         System.out.println(outputs);
 
         Oracle server = new Oracle(new InetSocketAddress(host, port), inputs, outputs, sm);
+
+        Timer timer = new Timer();
+        TimerTask task = new PeriodicChecker(server); 
+
+        timer.schedule(task, 0, 1000);
+
         server.run();
     }
 
