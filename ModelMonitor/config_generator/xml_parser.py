@@ -25,7 +25,7 @@ def parse_xml(file_path):
         suffix = "_request" if is_request else "_response" if is_response else "_msg"
         translated_name = f"{prefix}{base_name}".replace("___", "__")
         client_name = ""
-        if parts and parts[0] != root_name:
+        if parts and parts[0] != root_name and prefix != "topic_":
             client_name = f"_client_{root_name}"
             if is_request:
                 suffix = "_req"
