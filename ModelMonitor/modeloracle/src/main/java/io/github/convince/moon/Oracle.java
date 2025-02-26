@@ -261,11 +261,12 @@ public class Oracle extends WebSocketServer {
         System.out.println(outputs);
 
         Oracle server = new Oracle(new InetSocketAddress(host, port), inputs, outputs, sm);
+        server.setConnectionLostTimeout(0);
 
         Timer timer = new Timer();
         TimerTask task = new PeriodicChecker(server); 
 
-        timer.schedule(task, 0, 1000);
+        timer.schedule(task, 1000, 1000);
 
         server.run();
     }
