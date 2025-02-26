@@ -25,7 +25,7 @@ public class PeriodicChecker extends TimerTask {
         }
         if (this.oracle.evaluate() 
             && Math.abs(this.lastMonitoredSize - this.lastProducedSize) < 5
-            && attempts < 5) {
+            && attempts < maxAttempts) {
             return true;
         }
         return false;
@@ -33,7 +33,13 @@ public class PeriodicChecker extends TimerTask {
 
     @Override
     public void run() {
-        System.out.println(empiricallyEvaluate());
+        if (empiricallyEvaluate()) {
+            System.out.println("Currently True");
+        } else if (this.oracle.evaluate()) {
+            System.out.println("Timed out");
+        } else {
+            System.out.println("False");
+        }
     }
     
 }
