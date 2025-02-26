@@ -22,8 +22,10 @@ public class MessageHandler {
         String type = entry.getType();
 
         Map<String, Object> data = new HashMap<>();
-        for (String key : payload.keySet()) {
-            data.put(key.replaceFirst("^ros_fields__", ""), payload.get(key));
+        if (payload != null) {
+            for (String key : payload.keySet()) {
+                data.put(key.replaceFirst("^ros_fields__", ""), payload.get(key));
+            }
         }
 
         return new Message(name, type, data);

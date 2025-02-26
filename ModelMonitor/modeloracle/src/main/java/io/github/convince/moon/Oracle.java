@@ -102,7 +102,8 @@ public class Oracle extends WebSocketServer {
                 
                 Map<String, Object> dispatchedEvent = this.stateMachine.getDispatcher().waitForEvent(100);
                 String dispatchedEventName = (String) dispatchedEvent.keySet().toArray()[0];
-                Map<String, Object> dispatchedEventPayload = (Map<String, Object>) dispatchedEvent.values().toArray()[0];
+                Object dispatchedPayload = dispatchedEvent.values().toArray()[0];
+                Map<String, Object> dispatchedEventPayload = (dispatchedPayload == null) ? null : (Map<String, Object>) dispatchedPayload;
                 m = this.messageHandler.fromScxmlEvent(dispatchedEventName, dispatchedEventPayload);
                 this.producedMessages.add(m);
             }
