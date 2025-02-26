@@ -29,11 +29,18 @@ public class Oracle extends WebSocketServer {
     private ArrayList<Message> monitoredMessages = new ArrayList<>();
     private ArrayList<Message> producedMessages = new ArrayList<>();
 
+    private TimerTask pc = null;
+    private Timer timer;
 
     public Oracle(InetSocketAddress address, ArrayList<IOEntry> inputs, ArrayList<IOEntry> outputs, StateMachine stateMachine) {
         super(address);
         this.messageHandler = new MessageHandler(inputs, outputs);
         this.stateMachine = stateMachine;
+        this.timer = new Timer();
+    }
+
+    public void setPC(TimerTask pc) {
+        this.pc = pc;
     }
 
     public ArrayList<Message> getMonitoredMessages() {
@@ -67,6 +74,7 @@ public class Oracle extends WebSocketServer {
         //conn.send("Welcome to the server!"); // This method sends a message to the new client
         //broadcast("new connection: " + handshake.getResourceDescriptor()); // This method sends a message to all clients connected
         System.out.println("new connection to " + conn.getRemoteSocketAddress());
+        timer.schedule(this.pc, 1000, 1000);
     }
 
     @Override
@@ -264,10 +272,12 @@ public class Oracle extends WebSocketServer {
         Oracle server = new Oracle(new InetSocketAddress(host, port), inputs, outputs, sm);
         server.setConnectionLostTimeout(0);
 
-        Timer timer = new Timer();
-        TimerTask task = new PeriodicChecker(server); 
+        // Timer timer = new Timer();
+        TimerTask task = new PeriodicChecker(server);
 
-        timer.schedule(task, 1000, 1000);
+        server.setPC(task);
+
+        // timer.schedule(task, 1000, 1000);
 
         server.run();
     }
