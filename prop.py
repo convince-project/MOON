@@ -13,5 +13,5 @@ predicates = dict(
 # the behavior of the function must be defined by the user depending on the property and topic/service message
 def abstract_message(message):
     predicates['time'] = message['time']
-    predicates['p'] = message['p']
+    predicates['p'] = message['data'] is not None
     return predicates
