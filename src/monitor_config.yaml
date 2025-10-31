@@ -17,3 +17,7 @@ monitors: # list of generated monitors
         - name: my_service # name of the service
           type: std_msgs.msg.String # type of the service
           action: log
+      actions: # list of actions the monitor intercepts
+        - name: my_action # name of the action
+          type: custom_action_interfaces.action.MyAction # type of the action
+          action: log
