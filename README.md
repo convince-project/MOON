@@ -1,30 +1,26 @@
 # MOON
 
-MOON (MOnitoring ONline) is a runtime monitoring framework developed for CONVINCE on top of the ROSMonitoring tool, providing monitor generation for properties and models. Currently, only monitor generation for properties is implememented on top of [ROSMonitoring](https://github.com/autonomy-and-verification-uol/ROSMonitoring/tree/ros2), working for ROS2 topics and services.
+MOON (MOnitoring ONline) is a runtime monitoring framework developed for CONVINCE on top of the [ROSMonitoring](https://github.com/autonomy-and-verification-uol/ROSMonitoring/tree/ros2) tool, providing monitor generation for properties and models.
 
-MOON will notify violations of properties and that other tools can be invoked to amend plans or models and adapt the control architecture to new and unforeseen situations.
-
-MOON uses PastMTL as property specification language, relying on Reelay for their verification.
-
-In perspective, the tool will include also monitoring for models, i.e., the capability of ensuring that the concrete execution of some elements of the control architecture or the environment correspond to the abstract model utilized at design-time.
+MOON will notify violations of properties and that other tools can be invoked to amend plans or models and adapt the control architecture to new and unforeseen situations.MOON uses PastMTL as property specification language, relying on Reelay for their verification.
 
 ## Installation and usage
 
 ### Prerequisites
 
-`pip` and an installation of ROS2 up until Iron Irwini (recommended) is required, and so are the following Python packages:
+`pip` and an installation of ROS2 up until [Jazzy Jalisco](https://docs.ros.org/en/jazzy/index.html) is required, and so are the following Python packages:
 - `websocket_client`
 - `rospy_message_converter`
 - `pyyaml`
 - `reelay`
 
-In order for Reelay to work, an installation of the `boost` library is necessary.
+In order for Reelay to work, an installation of the [`boost`](https://www.boost.org/) library is necessary.
 
 ### Installation
 
-We need to clone the ros2 branch of the ROSMonitoring repository.
+We need to clone the MOON repository, making sure the ROSMonitoring submodule is cloned too by using `--recursive`.
 ```sh
-$ git clone https://github.com/autonomy-and-verification-uol/ROSMonitoring.git -b ros2
+$ git clone --recursive https://github.com/convince-project/MOON.git
 ```
 
 ### Usage
@@ -51,11 +47,15 @@ monitors: # list of generated monitors
         - name: my_service # name of the service
           type: std_msgs.msg.String # type of the service
           action: log
+      actions: # list of actions the monitor intercepts
+        - name: my_action # name of the action
+          type: custom_action_interfaces.action.MyAction # type of the action
+          action: log
 ```
  Then, we need to generate the corresponding monitor, by invoking the `generator` command.
 
  ```bash
- $ /path/to/ROSMonitoring/generator/ros2_devel/generator --config-file /path/to/monitor_config.yaml
+ $ /path/to/MOON/src/generator --config-file /path/to/monitor_config.yaml
  ```
 
  Now we need to build the newly created ROS package, so we run
@@ -89,7 +89,7 @@ def abstract_message(message):
 Then, we need to run the oracle by specifying the property and whether the time events are evenly spaced out or not, by setting either the `--dense` or `--discrete` flag.
 
 ```bash
-$ /path/to/ROSMonitoring/oracle/TLOracle/oracle.py --online --property /path/to/prop --port 8080 --dense
+$ /path/to/MOON/src/ROSMonitoring/oracle/TLOracle/oracle.py --online --property /path/to/prop --port 8080 --dense
 ```
 
 We can now run the monitor, with
@@ -103,4 +103,4 @@ Now the monitor will be running, and when the monitored topic/service is running
 
 ## Running example
 
-An example of a running monitoring execution can be found within the `docker` directory of the repository. It can be run by following the instructions within.
+An example of a running monitoring execution can be found within the `example` directory of the repository. It can be run by following the instructions within.
