@@ -41,12 +41,14 @@ Then, we need to generate the corresponding monitor, by invoking the ``generator
 Now we need to build the newly created ROS package, so we run
 
 .. code-block:: bash
+
     $ cd /path/to/monitor/workspace
     $ colcon build
 
 Next, we need to define a property to be verified on the monitored topics and/or services, such as
 
 .. code-block:: python
+
     import oracle
 
     # property to verify
@@ -68,9 +70,13 @@ Next, we need to define a property to be verified on the monitored topics and/or
 Then, we need to run the oracle by specifying the property and whether the time events are evenly spaced out or not, by setting either the ``--dense`` or ``--discrete`` flag.
 
 .. code-block:: bash
+
     $ /path/to/MOON/src/ROSMonitoring/oracle/TLOracle/oracle.py --online --property /path/to/prop --port 8080 --dense
 
+We can now run the monitor, with
+
 .. code-block:: bash
+    
     $ cd /path/to/monitor_ws
     $ . install/setup.bash
     $ ros2 launch src/monitor/launch/monitor.launch
