@@ -1,0 +1,3 @@
+[submodule "src/ROSMonitoring"]
+	path = src/ROSMonitoring
+	url = https://github.com/autonomy-and-verification-uol/ROSMonitoring.git
