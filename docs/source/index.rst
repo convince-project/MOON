@@ -7,3 +7,12 @@ MOON will notify violations of properties and that other tools can be invoked to
 MOON uses PastMTL as property specification language, relying on Reelay for their verification.
 
 The tool includes also monitoring for models, i.e., the capability of ensuring that the concrete execution of some elements of the control architecture or the environment correspond to the abstract model utilized at design-time.
+
+Contents
+--------
+
+.. toctree::
+   :maxdepth: 2
+
+   installation
+   usage
