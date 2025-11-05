@@ -153,8 +153,6 @@ class MonitorGenerator():
         self.services_info = 'self.services_info'
         self.codegenutils = CodeGenAndROSUtils()
 
-        self.actions = []
-
     # other helpful class related things 
     def get_mon_class_name(self,monitor_id):
         return "ROSMonitor_{0}".format(monitor_id)
@@ -1132,10 +1130,6 @@ class MonitorGenerator():
             # type = srv_lists[srv]['type']
             if not package in from_import:
                 from_import[package] = '*'
-        for act in self.actions:
-            package = act["action_pkg"]
-            if not package in from_import:
-                from_import[package] = '*'
         
         ''' now lets generate the lines  '''
         import_lines = ["# begin imports\n"]
@@ -1378,18 +1372,9 @@ class MonitorGenerator():
         # ET.dump(root)
         tree.write(location+'package.xml')
         
-    def generate_monitor_package(self,monitor_id, topics_with_types_and_action, services_with_types_and_action, actions_with_types, log, url, port, oracle_action, silent, warning):
+    def generate_monitor_package(self,monitor_id, topics_with_types_and_action, services_with_types_and_action, log, url, port, oracle_action, silent, warning):
         monloc = 'code/monitor/monitor/'
         packageloc = 'code/monitor/'
-
-        self.actions = actions_with_types
-        for action in self.actions:
-            action_name = action['name']
-            action_type = action['type']
-            action["action_pkg"] = action_type[:action_type.rfind('.')]
-            action["action_type"] = action_type.split('.')[-1]
-            action["short_name"] = action_name.replace('/', '_')
-
         lines = self.create_mon_file_lines(topics_with_types_and_action, services_with_types_and_action, monitor_id, silent, oracle_action, url, port, log)
         if services_with_types_and_action:
             lines.extend(self.create_service_node())

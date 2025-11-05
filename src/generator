@@ -29,10 +29,71 @@ import argparse
 import shutil 
 import pathlib
 
+from jinja2 import Template
+from cookiecutter.main import cookiecutter
+
+
 from generator import *
 
-# test using python generator_test.py --config online_config.yaml
-# or offline_config.yaml
+TEMPLATE_DIR='./template'
+
+
+def generate_action_monitor_package(action_monitor, out_dir):
+
+    out_dir = pathlib.Path(out_dir).expanduser().resolve()
+
+    cookiecutter(
+        template=f"{TEMPLATE_DIR}/action-monitor-package",
+        no_input=True,
+        extra_context={
+            "package_name": f"{action_monitor["action_name"]}_monitor",
+            "node_name": f"{action_monitor["action_name"]}_monitor",
+        },
+        output_dir=out_dir,
+    )
+
+    with open(f"{out_dir}/{action_monitor["action_name"]}_monitor/{action_monitor["action_name"]}_monitor/{action_monitor["action_name"]}_monitor.py", "w") as f:
+        f.write(action_monitor["monitor_content"])
+
+    print(f"Package '{action_monitor["action_name"]}_monitor' generated in:")
+    print(f"{out_dir}/{action_monitor["action_name"]}_monitor")
+
+
+def generate_action_monitor(action_name, action_type):
+    with open(f"{TEMPLATE_DIR}/action_monitor.py.j2") as f:
+        template = Template(f.read())
+
+    action_pkg = '.'.join(action_type.split('.')[:-1])
+    action_t = action_type.split('.')[-1]
+
+    output = template.render(
+        action_pkg=action_pkg,
+        action_type=action_t,
+        action_name=action_name,
+    )
+
+    return {"action_name": action_name, "monitor_content": output}
+
+
+def generate_action_monitors(monitor):
+    action_topics = []
+    monitor_files = []
+    for action in monitor['monitor']['actions']:
+        if ('name' not in action) or ('type' not in action):
+            raise Exception("Define name and type for action")
+        
+        monitor_files.append(generate_action_monitor(action['name'], action['type']))
+
+        action_topic = {'name': f'/{action['name']}/messages',
+                        'type': 'std_msgs.msg.String',
+                        'action': 'log',}
+        action_topics.append(action_topic)
+
+    for action_topic in action_topics:
+        monitor['monitor']['topics'].append(action_topic)
+
+    return monitor, monitor_files
+        
 
 def copy_dir(source, destination):
     destination_path: pathlib.Path
@@ -78,8 +139,9 @@ def main(argv):
         help='YAML configuration file',
         default='./config.yaml',
         metavar='STRING')
-    parser.add_argument('--out_dir', help='Output workspace directory')
     args = parser.parse_args()  # maybe in the future we will need more arguments, for now it's just one
+
+    action_monitors = []
 
     with open(args.config_file, 'r') as stream:  # open the config file for the generator
         try:
@@ -87,8 +149,6 @@ def main(argv):
             nodes = {}
             package_name = 'monitor'
             monpathfound = False
-
-            config['path'] = args.out_dir
             
             if 'path' in config:
                 monpath = config['path']
@@ -120,18 +180,21 @@ def main(argv):
                 ids = []
                 for monitor in config['monitors']:
 
-                    if 'id' not in monitor['monitor'] or ('topics' not in monitor['monitor'] and 'services' not in monitor['monitor'] and 'actions' not in monitor['monitor']) or 'log' not in monitor['monitor']:
+                    if 'id' not in monitor['monitor'] or ('topics' not in monitor['monitor'] and 'services' not in monitor['monitor']) or 'log' not in monitor['monitor']:
                         print('Each monitor in the configuration file must contain the id, log and list of the topics (or services) fields.')
                         return
                     if 'oracle' in monitor['monitor']  and ('port' not in monitor['monitor']['oracle'] or 'url' not in monitor['monitor']['oracle'] or 'action' not in monitor['monitor']['oracle']):
                         print('Url, port and action must be specified inside the oracle.')
-                        return
+                        return        
+
                     if 'topics' not in monitor['monitor']:
                         monitor['monitor']['topics'] = []
                     if 'services' not in monitor['monitor']:
                         monitor['monitor']['services'] = []
-                    if 'actions' not in monitor['monitor']:
-                        monitor['monitor']['actions'] = []
+
+                    if 'actions' in monitor['monitor']:
+                        monitor, action_monitors = generate_action_monitors(monitor)
+                    
                     for topic_with_types_and_action in monitor['monitor']['topics']:
                         if 'name' not in topic_with_types_and_action or 'type' not in topic_with_types_and_action or 'action' not in topic_with_types_and_action:
                             print('Each topic needs a name, a type and an action.')
@@ -163,13 +226,6 @@ def main(argv):
                             return
                         if service_with_types_and_action['action'] not in ['log', 'filter']:
                             print('The actions available for the services are: log, filter.')
-                            return
-                    for action_with_types in monitor['monitor']['actions']:
-                        if 'name' not in action_with_types or 'type' not in action_with_types or 'action' not in action_with_types:
-                            print('Each service needs a name, a type and an action.')
-                            return
-                        if action_with_types['action'] not in ['log']:
-                            print('The actions available for the services are: log.')
                             return
                     if 'oracle' in monitor['monitor']:
                         url = monitor['monitor']['oracle']['url']
@@ -203,6 +259,9 @@ def main(argv):
                 # now that we are all done lets go copy the entire folder
                 print('copying files to '+monpath)
                 copytree('code/',monpath)
+
+                for am in action_monitors:
+                    generate_action_monitor_package(am, monpath)
                 
         except yaml.YAMLError as exc:
             print(exc)

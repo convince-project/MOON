@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>{{ cookiecutter.package_name }}</name>
+  <version>0.0.0</version>
+  <description>{{ cookiecutter.description }}</description>
+
+  <maintainer email="{{ cookiecutter.maintainer_email }}">{{ cookiecutter.maintainer_name }}</maintainer>
+  <license>{{ cookiecutter.license }}</license>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+
+  <exec_depend>rclpy</exec_depend>
+
+</package>
