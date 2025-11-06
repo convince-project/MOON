@@ -81,4 +81,10 @@ We can now run the monitor, with
     $ . install/setup.bash
     $ ros2 launch src/monitor/launch/monitor.launch
 
-Now the monitor will be running, and when the monitored topic/service is running, it will send messages to the oracle, which will provide an evaluation of the property.
+In case any action monitors were defined, we need to also start the corresponding node in the same workspace
+
+.. code-block:: bash
+
+    $ ros2 run my_action_monitor my_action_monitor
+
+Now the monitor will be running, and when the monitored channel is running, it will send messages to the oracle, which will provide an evaluation of the property.

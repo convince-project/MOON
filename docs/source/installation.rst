@@ -13,6 +13,8 @@ In order to install MOON, ``pip`` is required as well as an installation of ROS2
 - ``rospy_message_converter``
 - ``pyyaml``
 - ``reelay``
+- ``jinja2``
+- ``cookiecutter``
 
 In order for Reelay to work, an installation of the `Boost <https://www.boost.org/>`_ C++ libraries is necessary.
 
