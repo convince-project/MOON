@@ -2,7 +2,7 @@ name: Docker
 on:
   push:
     branches:
-      - dev/docker
+      - main
   pull_request:
 
 env:
