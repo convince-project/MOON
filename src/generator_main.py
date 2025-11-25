@@ -24,6 +24,7 @@
 
 import os
 import sys
+import stat
 import yaml
 import argparse
 import shutil 
@@ -34,7 +35,8 @@ from cookiecutter.main import cookiecutter
 
 from generator import *
 
-TEMPLATE_DIR='./template'
+
+TEMPLATE_DIR=os.path.join(get_moon_path(), 'template')
 
 
 def generate_action_monitor_package(action_monitor, out_dir):
@@ -251,13 +253,20 @@ def main(argv = None):
                 lfg.write_monitor_launch(ids, 'monitor', launchpath)
                 lfg.instrument_node_launch_files(nodes)
 
-                # 
+                # Scripts generation
                 with open(f"{TEMPLATE_DIR}/node_script.py.j2") as f:
                     script_template = Template(f.read())
+                base_path = f"{get_code_path()}/monitor/scripts"
+                if not os.path.exists(base_path):
+                    os.mkdir(base_path)
                 for id in ids:
+                    file_path = os.path.join(base_path, id)
+                    # Create the scripts folder, if it doesn't exist
                     output = script_template.render(monitor_name=id)
-                    with open(f"{get_code_path()}/monitor/scripts/{id}", 'w') as o:
+                    with open(file_path, 'w') as o:
                         o.write(output)
+                    current_permissions = stat.S_IMODE(os.lstat(file_path).st_mode)
+                    os.chmod(file_path, current_permissions | stat.S_IEXEC)
 
                 # now that we are all done lets go copy the entire folder
                 print('copying files to ' + monpath)

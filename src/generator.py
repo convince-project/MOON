@@ -39,6 +39,16 @@ def get_code_path() -> str:
         path_base = os.path.join('MOON', 'code')
     return path_base
 
+
+def get_moon_path() -> str:
+    """Try to get the absolute path to MOON's src folder, if possible. Otherwise, resort to the current path."""
+    path_base = ''
+    try:
+        path_base = str(resource_files("MOON").joinpath(".."))
+    except:
+        path_base = '.'
+    return path_base
+
 sys.path.append(os.path.join(get_code_path(), 'monitor'))
 
 import setup_resources as sr

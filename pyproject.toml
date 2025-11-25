@@ -17,7 +17,7 @@ classifiers = [
 ]
 keywords = []
 dependencies = [
-    "websocket_client",
+    "websocket-client",
     "rospy_message_converter",
     "pyyaml",
     "reelay",
