@@ -50,16 +50,15 @@ class CodeGenAndROSUtils():
         self.indent_level = 0 
         self.new_line = '\n'
         self.debug = False
-        
+
     def reset_indent(self,msg):
         if self.debug:
             print(msg+" Resetting indent level from {0} to 0".format(self.indent_level))
         self.indent_level=0
-        
+
     def check_indent(self,msg):
         if self.debug:
             print(msg+" Indent level: {0}".format(self.indent_level))
-
 
     def inc_indent(self, current_indent):
         self.indent_level+=1
@@ -79,7 +78,6 @@ class CodeGenAndROSUtils():
             self.indent_level-=1
             return new_indent
     
-    
     ''' this is an array of lines'''
 
     def write_lines(self, lines, monitor_id,monloc):
@@ -89,23 +87,18 @@ class CodeGenAndROSUtils():
         
     def create_python_header(self):
         return '#!/usr/bin/env python\n'    
-     
-     
+
     def append_lines_to_list_with_prefix(self,linelist,lines,lineprefix):
         for l in lines:
             linelist.append(lineprefix+l)
-        return linelist
-    
-        
+        return linelist    
+
     # ROS things 
     def get_ros_info_logging_line(self, text):
         return 'self.get_logger().info({0})\n'.format(text)
     
     def get_ros_time_line(self):
         return 'float(self.get_clock().now().to_msg().sec) + float((self.get_clock().now().to_msg().nanosec) / 1000000000)'
-
-        
-        
         
     def ros_subscriber_creation_command(self,subname,subtype,callbackname,qsize,doStringName=True):
         if doStringName:
@@ -1363,13 +1356,11 @@ class MonitorGenerator():
     
     
     def create_package_xml(self,tp_lists,location):
-        
         child_to_insert_after = 11
         tree = ET.parse(location+"/.packagexml")
         root = tree.getroot()
         children = list(root)
-        
-            
+ 
         # so now we insert the relevant packages
         pkgs_so_far = []
         for t in tp_lists:
