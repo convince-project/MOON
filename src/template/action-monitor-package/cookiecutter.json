@@ -1,0 +1,8 @@
+{
+  "package_name": "package",
+  "node_name": "node",
+  "description": "Action Monitor ROS2 package",
+  "maintainer_name": "Karim Pedemonte",
+  "maintainer_email": "karim.pedemonte@edu.unige.it",
+  "license": "Apache-2.0"
+}

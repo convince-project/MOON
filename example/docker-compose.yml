@@ -1,0 +1,249 @@
+
+x-base: &base
+  environment:
+    - DISPLAY=${DISPLAY}
+    - XAUTHORITY=/home/user1/.Xauthority
+    - QT_X11_NO_MITSHM=1
+#    - DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user1/1000/bus
+    - LIBGL_ALWAYS_INDIRECT=0
+    - YARP_COLORED_OUTPUT=1
+    - YARP_CLOCK=/clock
+    - YARP_NAMESPACE=/root
+    - ROS_DOMAIN_ID=47
+    - CYCLONEDDS_URI=/home/user1/MBVM-SIMPAR2025/docker/cyclone_dds_settings.xml
+  volumes:
+    - "/tmp/.X11-unix:/tmp/.X11-unix:rw"
+    - "/etc/hosts:/etc/hosts"
+
+  network_mode: host
+  ipc: host
+  pid: host
+  privileged: true
+  security_opt:
+    - apparmor:unconfined
+
+
+services:
+
+# Images
+  ros2:
+    image: ste93/mbvm:simpar2025
+    build:
+      dockerfile: Dockerfile
+      context: .
+
+# containers
+  terminator:
+    image: ste93/mbvm:simpar2025
+    <<: *base
+    container_name: terminator
+    command: sh -c "yarp conf 172.17.0.1 10000; terminator --no-dbus"
+
+  yarpserver:
+    image: ste93/mbvm:simpar2025
+    <<: *base
+    container_name: yarpserver
+    command: sh -c "yarp conf 172.17.0.1 10000; yarpserver"
+
+  yarpclock:
+    image: ste93/mbvm:simpar2025
+    <<: *base
+    container_name: yarpclock
+    command: sh -c "yarp conf 172.17.0.1 10000; yarp clock"
+    depends_on:
+      - yarpserver
+
+  rosclock:
+      image: ste93/mbvm:simpar2025
+      <<: *base
+      container_name: rosclock
+      command: bash -c "source /opt/ros/iron/setup.bash && \
+                source /usr/local/src/robot/yarp-devices-ros2/ros2_interfaces_ws/install/setup.bash && \
+                source /home/user1/MBVM-SIMPAR2025/code/install/setup.bash && \
+                yarp conf 172.17.0.1 10000; yarp wait $${YARP_NAMESPACE}; \
+                export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/usr/local/src/robot/yarp/build/lib/; 
+                ros2 run clock_component clock_component"
+
+  fakeBattery:
+    image: ste93/mbvm:simpar2025
+    <<: *base
+    container_name: fakeBattery
+    command: bash -c "source /opt/ros/iron/setup.bash && \
+              source /usr/local/src/robot/yarp-devices-ros2/ros2_interfaces_ws/install/setup.bash && \
+              source /home/user1/MBVM-SIMPAR2025/code/install/setup.bash && \
+              yarp conf 172.17.0.1 10000; yarp wait $${YARP_NAMESPACE}; \
+              yarprobotinterface --config /home/user1/MBVM-SIMPAR2025/code/src/components/fake_battery_component/robotinterface.xml"
+    depends_on:
+      - yarpserver
+
+  fakeNavigation:
+    image: ste93/mbvm:simpar2025
+    <<: *base
+    container_name: fakeNavigation
+    command: bash -c "source /opt/ros/iron/setup.bash && \
+              source /usr/local/src/robot/yarp-devices-ros2/ros2_interfaces_ws/install/setup.bash && \
+              source /home/user1/MBVM-SIMPAR2025/code/install/setup.bash && \
+              yarp conf 172.17.0.1 10000; yarp wait $${YARP_NAMESPACE}; \
+              yarprobotinterface --config /home/user1/MBVM-SIMPAR2025/code/src/components/fake_navigation_component/robotinterface.xml"
+    depends_on:
+      - yarpserver
+
+  fakeLocalizer:
+    image: ste93/mbvm:simpar2025
+    <<: *base
+    container_name: fakeLocalizer
+    command: bash -c "source /opt/ros/iron/setup.bash && \
+              source /usr/local/src/robot/yarp-devices-ros2/ros2_interfaces_ws/install/setup.bash && \
+              source /home/user1/MBVM-SIMPAR2025/code/install/setup.bash && \
+              yarp conf 172.17.0.1 10000; yarp wait $${YARP_NAMESPACE}; \
+              yarpdev --device fakeLocalizer"
+    depends_on:
+      - yarpserver
+
+  mapServer:
+    image: ste93/mbvm:simpar2025
+    <<: *base
+    container_name: mapServer
+    command: bash -c "source /opt/ros/iron/setup.bash && \
+              source /usr/local/src/robot/yarp-devices-ros2/ros2_interfaces_ws/install/setup.bash && \
+              yarp conf 172.17.0.1 10000; yarp wait $${YARP_NAMESPACE}; \
+              yarprobotinterface --context navigation2 --from mapServer.ini"
+    depends_on:
+      - yarpserver
+
+  localization:
+    image: ste93/mbvm:simpar2025
+    <<: *base
+    container_name: localization
+    command: bash -c "source /opt/ros/iron/setup.bash && \
+              source /usr/local/src/robot/yarp-devices-ros2/ros2_interfaces_ws/install/setup.bash && \
+              yarp conf 172.17.0.1 10000; yarp wait $${YARP_NAMESPACE}; \
+              yarprobotinterface --context navigation2 --from localizationROS2.ini --init_map gam_sim_real"
+    depends_on:
+      - yarpserver
+
+  navigator:
+    image: ste93/mbvm:simpar2025
+    <<: *base
+    container_name: navigator
+    command: bash -c "source /opt/ros/iron/setup.bash && \
+              source /usr/local/src/robot/yarp-devices-ros2/ros2_interfaces_ws/install/setup.bash && \
+              yarp conf 172.17.0.1 10000; yarp wait $${YARP_NAMESPACE}; \
+              yarprobotinterface --context navigation2 --from navigator2D.ini"
+    depends_on:
+      - yarpserver
+    
+
+  yarprun:
+    image: ste93/mbvm:simpar2025
+    <<: *base
+    container_name: yarprun
+    command: bash -c "export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/usr/local/src/robot/yarp/build/lib/:/home/user1/Qt6.6.3/lib/ && \
+              source /opt/ros/iron/setup.bash && \
+              source /usr/local/src/robot/yarp-devices-ros2/ros2_interfaces_ws/install/setup.bash && \
+              source /home/user1/MBVM-SIMPAR2025/code/install/setup.bash && \
+              yarp conf 172.17.0.1 10000; yarp wait $${YARP_NAMESPACE}; \
+              yarp run --server /bt --log"
+    depends_on:
+      - yarpserver
+
+  yarplogger:
+    image: ste93/mbvm:simpar2025
+    <<: *base
+    container_name: yarplogger
+    command: bash -c "source /opt/ros/iron/setup.bash && \
+              source /usr/local/src/robot/yarp-devices-ros2/ros2_interfaces_ws/install/setup.bash && \
+              source /home/user1/MBVM-SIMPAR2025/code/install/setup.bash && \
+              yarp conf 172.17.0.1 10000; yarp wait $${YARP_NAMESPACE}; \
+              yarplogger --start"
+    depends_on:
+      - yarpserver
+    # networks:
+    #   frontapp:
+    #     ipv4_address: 172.17.0.14
+
+  run_components:
+    image: ste93/mbvm:simpar2025
+    <<: *base
+    container_name: run_components
+    command: bash -c "sleep 2; source /opt/ros/iron/setup.bash && \
+              source /usr/local/src/robot/yarp-devices-ros2/ros2_interfaces_ws/install/setup.bash && \
+              source /home/user1/MBVM-SIMPAR2025/code/install/setup.bash && \
+              yarp conf 172.17.0.1 10000; yarp wait $${YARP_NAMESPACE}; \
+              yarpmanager-console --application  /home/user1/MBVM-SIMPAR2025/code/launch/applications/convince_bt_components.xml --exit --run --connect"
+    depends_on:
+      - yarpserver
+      - yarprun
+      - yarplogger
+
+  run_skills:
+    image: ste93/mbvm:simpar2025
+    <<: *base
+    container_name: run_skills
+    command: bash -c "sleep 2; source /opt/ros/iron/setup.bash && \
+              source /usr/local/src/robot/yarp-devices-ros2/ros2_interfaces_ws/install/setup.bash && \
+              source /home/user1/MBVM-SIMPAR2025/code/install/setup.bash && \
+              yarp conf 172.17.0.1 10000; yarp wait $${YARP_NAMESPACE}; \
+              yarpmanager-console --application  /home/user1/MBVM-SIMPAR2025/code/launch/applications/convince_bt_skills.xml --exit --run --connect"
+    depends_on:
+      - yarpserver
+      - yarprun
+      - yarplogger
+
+
+  run_bt_executable:
+    image: ste93/mbvm:simpar2025
+    <<: *base
+    container_name: run_bt_executable
+    command: bash -c "source /opt/ros/iron/setup.bash && \
+              source /usr/local/src/robot/yarp-devices-ros2/ros2_interfaces_ws/install/setup.bash && \
+              source /home/user1/MBVM-SIMPAR2025/code/install/setup.bash && \
+              yarp conf 172.17.0.1 10000; yarp wait $${YARP_NAMESPACE}; \
+              ros2 run bt_executable bt_executable /home/user1/MBVM-SIMPAR2025/code/src/behavior_tree/BT/Policy.xml"
+    depends_on:
+      - yarpserver
+      - yarprun
+      - yarplogger
+      - run_components
+      - run_skills
+  
+  groot:
+    image: ste93/mbvm:simpar2025
+    <<: *base
+    container_name: groot
+    command: bash -c "source /opt/ros/iron/setup.bash && \
+              source /usr/local/src/robot/yarp-devices-ros2/ros2_interfaces_ws/install/setup.bash && \
+              source /home/user1/MBVM-SIMPAR2025/code/install/setup.bash && \
+              /home/user1/Groot/build/Groot --mode monitor --autoconnect"
+    depends_on:
+      - yarpserver
+      - yarprun
+      - yarplogger
+      - run_components
+      - run_skills
+      - run_bt_executable
+
+  ros2oracle:
+    image: ste93/mbvm:simpar2025
+    <<: *base
+    container_name: ros2oracle
+    command: bash -c "source /opt/ros/iron/setup.bash && \
+              source /home/user1/MBVM-SIMPAR2025/code/install/setup.bash && \
+              cd /home/user1/MBVM-SIMPAR2025/monitoring && \
+              python3 /home/user1/ROSMonitoring/oracle/TLOracle/oracle.py --online --dense --property prop3"
+
+  ros2monitor:
+    image: ste93/mbvm:simpar2025
+    <<: *base
+    container_name: ros2monitor
+    command: bash -c "source /opt/ros/iron/setup.bash && \
+              source /home/user1/MBVM-SIMPAR2025/code/install/setup.bash && \
+              cd /home/user1/MBVM-SIMPAR2025/monitor_ws/src/ && \
+              source install/setup.bash && \
+              ros2 launch monitor/launch/monitor.launch"
+    depends_on:
+      - ros2oracle
+
+# yarpmanager-console --application  MBVM-SIMPAR2025/code/launch/applications/convince_bt_components.xml --exit --run --connect
+# yarpmanager-console --application  MBVM-SIMPAR2025/code/launch/applications/convince_bt_skills.xml --exit --run --connect
+# ros2 run bt_executable bt_executable MBVM-SIMPAR2025/code/src/behavior_tree/BT/Policy.xml

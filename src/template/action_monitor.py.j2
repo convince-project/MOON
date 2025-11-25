@@ -1,0 +1,162 @@
+import rclpy
+from rclpy.node import Node
+from rclpy.action import ActionServer, ActionClient, CancelResponse
+from action_msgs.msg import GoalStatus
+from copy import deepcopy
+
+from std_msgs.msg import String
+import json
+from rosidl_runtime_py import message_to_ordereddict
+
+from {{ action_pkg }} import {{ action_type }}
+
+
+class {{ action_name | capitalize }}Monitor(Node):
+    def __init__(self):
+        super().__init__('{{ action_name }}Monitor')
+
+        self._action_server = ActionServer(
+            self,
+            {{ action_type }},
+            '{{ action_name }}_mon',
+            execute_callback=self.execute_callback,
+            cancel_callback=self.cancel_callback,
+        )
+
+        self._client = ActionClient(self, {{ action_type }}, '{{ action_name }}')
+
+        # Maps proxy (local server) goal UUID → remote (client) goal handle
+        self._goal_map = {}
+        self._pending_cancels = set()
+
+        self._messages_pub = self.create_publisher(
+            String,
+            '{{ action_name }}/messages',
+            10
+        )
+
+    @staticmethod
+    def _uuid_to_bytes(uuid_msg):
+        return bytes(uuid_msg.uuid)
+
+
+    def _publish_messages(self, event_type, payload):
+        try:
+            d = {
+                "event": event_type,
+                "payload": message_to_ordereddict(payload)
+            }
+            msg = String()
+            msg.data = json.dumps(d)
+            self._messages_pub.publish(msg)
+
+        except Exception as e:
+            self.get_logger().error(f"[ActionMonitor] Failed to publish messages: {e}")
+    
+
+    def cancel_callback(self, server_goal_handle):
+        key = self._uuid_to_bytes(server_goal_handle.goal_id)
+        self.get_logger().info(f"[ActionMonitor] Cancel request received for {key.hex()}")
+
+        self._publish_messages("cancel", server_goal_handle.request)
+
+        remote_handle = self._goal_map.get(key)
+        if remote_handle:
+            self.get_logger().info("[ActionMonitor] Forwarding cancel to remote...")
+            cancel_future = self._client._cancel_goal_async(remote_handle)
+
+            def _done(_):
+                self.get_logger().info("[ActionMonitor] Remote cancel returned")
+
+            cancel_future.add_done_callback(_done)
+        else:
+            self.get_logger().info("[ActionMonitor] No remote handle yet → storing pending cancel")
+            self._pending_cancels.add(key)
+
+        return CancelResponse.ACCEPT
+
+    async def execute_callback(self, server_goal_handle):
+        key = self._uuid_to_bytes(server_goal_handle.goal_id)
+        self.get_logger().info(f"[ActionMonitor] Forwarding goal {key.hex()} to remote")
+
+        if not self._client.wait_for_server():
+            self.get_logger().error("Remote action server not available.")
+            server_goal_handle.abort()
+            return {{ action_name }}.Result()
+
+        goal_msg = deepcopy(server_goal_handle.request)
+
+        self._publish_messages("goal", server_goal_handle.request)
+
+        send_future = self._client.send_goal_async(
+            goal_msg,
+            feedback_callback=lambda m: self._forward_feedback(server_goal_handle, m),
+        )
+
+        try:
+            remote_handle = await send_future
+        except Exception as e:
+            self.get_logger().error(f"Failed forwarding goal: {e}")
+            server_goal_handle.abort()
+            return {{ action_type }}.Result()
+
+        self._goal_map[key] = remote_handle
+
+        if key in self._pending_cancels:
+            self.get_logger().info("[ActionMonitor] Pending cancel → forwarding now")
+            try:
+                self._client.cancel_goal_async(remote_handle)
+            except Exception as e:
+                self.get_logger().error(f"Failed forwarding pending cancel: {e}")
+            finally:
+                self._pending_cancels.remove(key)
+
+        if not remote_handle.accepted:
+            self.get_logger().warn("[ActionMonitor] Remote rejected the goal")
+            server_goal_handle.abort()
+            self._goal_map.pop(key, None)
+            return {{ action_type }}.Result()
+
+        self.get_logger().info("[ActionMonitor] Remote accepted → waiting for result")
+        result_future = await remote_handle.get_result_async()
+        self.get_logger().info(f"[ActionMonitor] Remote result received (status={result_future.status})")
+        self.get_logger().info(f"[ActionMonitor] Result data: {result_future.result}")
+
+        self._goal_map.pop(key, None)
+
+        status = result_future.status
+        remote_result = deepcopy(result_future.result)
+
+        self._publish_messages("result", remote_result)
+
+
+        if status == GoalStatus.STATUS_SUCCEEDED:
+            server_goal_handle.succeed()
+        elif status == GoalStatus.STATUS_CANCELED:
+            server_goal_handle.canceled()
+        else:
+            server_goal_handle.abort()
+
+        return remote_result
+
+    def _forward_feedback(self, server_goal_handle, feedback_msg):
+        try:
+            fb = deepcopy(feedback_msg.feedback)
+            server_goal_handle.publish_feedback(fb)
+            self._publish_messages("feedback", fb)
+        except Exception as e:
+            self.get_logger().error(f"[ActionMonitor] Failed forwarding feedback: {e}")
+
+
+def main(args=None):
+    rclpy.init(args=args)
+    node = {{ action_name | capitalize }}Monitor()
+    try:
+        rclpy.spin(node)
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
+
+if __name__ == "__main__":
+    main()
