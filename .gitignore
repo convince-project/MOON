@@ -6,3 +6,5 @@ build
 src/MOON/code/monitor/package.xml
 src/MOON/code/monitor/monitor/*.py
 !src/MOON/code/monitor/monitor/__init__.py
+src/MOON/code/monitor/launch/*
+src/MOON/code/monitor/scripts/*

@@ -250,6 +250,15 @@ def main(argv = None):
                 launchpath = get_code_path() + '/monitor/launch/'
                 lfg.write_monitor_launch(ids, 'monitor', launchpath)
                 lfg.instrument_node_launch_files(nodes)
+
+                # 
+                with open(f"{TEMPLATE_DIR}/node_script.py.j2") as f:
+                    script_template = Template(f.read())
+                for id in ids:
+                    output = script_template.render(monitor_name=id)
+                    with open(f"{get_code_path()}/monitor/scripts/{id}", 'x') as o:
+                        o.write(output)
+
                 # now that we are all done lets go copy the entire folder
                 print('copying files to ' + monpath)
                 copytree(get_code_path(), monpath)

@@ -8,7 +8,7 @@ version = "0.0.1"
 description = ""
 readme = "README.md"
 authors = [
-    {name = "Karin Pedemonte", email = "karim.pedemonte@edu.unige.it"}
+    {name = "Karim Pedemonte", email = "karim.pedemonte@edu.unige.it"}
 ]
 license = {file = "LICENSE"}
 classifiers = [
