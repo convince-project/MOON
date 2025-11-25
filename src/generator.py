@@ -24,9 +24,9 @@ import os
 import sys
 import yaml
 import xml.etree.ElementTree as ET
-from jedi.inference.names import AbstractNameDefinition
-from prompt_toolkit.layout.controls import GetLinePrefixCallable
-from gi._gtktemplate import Child
+# from jedi.inference.names import AbstractNameDefinition
+# from prompt_toolkit.layout.controls import GetLinePrefixCallable
+# from gi._gtktemplate import Child
 from importlib.resources import files as resource_files
 
 

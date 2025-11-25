@@ -256,7 +256,7 @@ def main(argv = None):
                     script_template = Template(f.read())
                 for id in ids:
                     output = script_template.render(monitor_name=id)
-                    with open(f"{get_code_path()}/monitor/scripts/{id}", 'x') as o:
+                    with open(f"{get_code_path()}/monitor/scripts/{id}", 'w') as o:
                         o.write(output)
 
                 # now that we are all done lets go copy the entire folder
