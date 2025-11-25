@@ -6,28 +6,36 @@ MOON will notify violations of properties and that other tools can be invoked to
 
 ## Installation and usage
 
-### Prerequisites
-
-`pip` and an installation of ROS2 up until [Jazzy Jalisco](https://docs.ros.org/en/jazzy/index.html) is required, and so are the following Python packages:
-- `websocket_client`
-- `rospy_message_converter`
-- `pyyaml`
-- `reelay`
-- `jinja2`
-- `cookiecutter`
-
-In order for Reelay to work, an installation of the [`boost`](https://www.boost.org/) library is necessary.
-
-### Installation
+### Clone the MOON repo
 
 We need to clone the MOON repository, making sure the ROSMonitoring submodule is cloned too by using `--recursive`.
 ```sh
 $ git clone --recursive https://github.com/convince-project/MOON.git
 ```
 
+### Prerequisites
+
+#### Python dependencies
+
+`pip` and an installation of ROS2 up until [Jazzy Jalisco](https://docs.ros.org/en/jazzy/index.html) is required.
+
+#### APT dependencies
+In order for Reelay to work, an installation of the [`boost`](https://www.boost.org/) library is necessary.
+
+This can be done using
+``` bash
+sudo apt install libboost-all-dev libcairo2-dev
+```
+
+### Installation
+
+```bash
+pip install -e MOON
+```
+
 ### Usage
 
-In order to use the tool, we need to define a monitor configuration, such as the following:
+In order to use the tool, we need to define a monitor configuration, like in the following:
 
 ```yaml
 path: /path/to/monitor/workspace/src/ # path to the ros workspace of the monitor package

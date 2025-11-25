@@ -22,14 +22,26 @@
 
 import os
 import sys
-sys.path.append(os.path.join(os.path.dirname(__file__),'code/monitor/'))
 import yaml
 import xml.etree.ElementTree as ET
 from jedi.inference.names import AbstractNameDefinition
 from prompt_toolkit.layout.controls import GetLinePrefixCallable
 from gi._gtktemplate import Child
-import setup_resources as sr
+from importlib.resources import files as resource_files
 
+
+def get_code_path() -> str:
+    """Try to get the absolute path to the code folder, if possible. Otherwise, resort to the relative one."""
+    path_base = ''
+    try:
+        path_base = str(resource_files("MOON").joinpath("code"))
+    except:
+        path_base = os.path.join('MOON', 'code')
+    return path_base
+
+sys.path.append(os.path.join(get_code_path(), 'monitor'))
+
+import setup_resources as sr
 
 class CodeGenAndROSUtils():
 
@@ -1353,7 +1365,7 @@ class MonitorGenerator():
     def create_package_xml(self,tp_lists,location):
         
         child_to_insert_after = 11
-        tree = ET.parse(location+".packagexml")
+        tree = ET.parse(location+"/.packagexml")
         root = tree.getroot()
         children = list(root)
         
@@ -1373,8 +1385,8 @@ class MonitorGenerator():
         tree.write(location+'package.xml')
         
     def generate_monitor_package(self,monitor_id, topics_with_types_and_action, services_with_types_and_action, log, url, port, oracle_action, silent, warning):
-        monloc = 'code/monitor/monitor/'
-        packageloc = 'code/monitor/'
+        monloc = os.path.join(get_code_path(), 'monitor', 'monitor') + '/'
+        packageloc = os.path.join(get_code_path(), 'monitor') + '/'
         lines = self.create_mon_file_lines(topics_with_types_and_action, services_with_types_and_action, monitor_id, silent, oracle_action, url, port, log)
         if services_with_types_and_action:
             lines.extend(self.create_service_node())

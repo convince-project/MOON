@@ -32,7 +32,6 @@ import pathlib
 from jinja2 import Template
 from cookiecutter.main import cookiecutter
 
-
 from generator import *
 
 TEMPLATE_DIR='./template'
@@ -46,17 +45,17 @@ def generate_action_monitor_package(action_monitor, out_dir):
         template=f"{TEMPLATE_DIR}/action-monitor-package",
         no_input=True,
         extra_context={
-            "package_name": f"{action_monitor["action_name"]}_monitor",
-            "node_name": f"{action_monitor["action_name"]}_monitor",
+            "package_name": f"{action_monitor['action_name']}_monitor",
+            "node_name": f"{action_monitor['action_name']}_monitor",
         },
         output_dir=out_dir,
     )
 
-    with open(f"{out_dir}/{action_monitor["action_name"]}_monitor/{action_monitor["action_name"]}_monitor/{action_monitor["action_name"]}_monitor.py", "w") as f:
+    with open(f"{out_dir}/{action_monitor['action_name']}_monitor/{action_monitor['action_name']}_monitor/{action_monitor['action_name']}_monitor.py", "w") as f:
         f.write(action_monitor["monitor_content"])
 
-    print(f"Package '{action_monitor["action_name"]}_monitor' generated in:")
-    print(f"{out_dir}/{action_monitor["action_name"]}_monitor")
+    print(f"Package '{action_monitor['action_name']}_monitor' generated in:")
+    print(f"{out_dir}/{action_monitor['action_name']}_monitor")
 
 
 def generate_action_monitor(action_name, action_type):
@@ -84,7 +83,7 @@ def generate_action_monitors(monitor):
         
         monitor_files.append(generate_action_monitor(action['name'], action['type']))
 
-        action_topic = {'name': f'/{action['name']}/messages',
+        action_topic = {'name': f"/{action['name']}/messages",
                         'type': 'std_msgs.msg.String',
                         'action': 'log',}
         action_topics.append(action_topic)
@@ -130,12 +129,11 @@ def copytree(src, dst, symlinks=False, ignore=None):
         else:
             shutil.copy2(s, d)
 
-def main(argv):
-    
+def main(argv = None):
     parser = argparse.ArgumentParser(
         description='this is a Python program to generate for monitoring ROS topics',
         formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument('--config_file',
+    parser.add_argument('--config-file',
         help='YAML configuration file',
         default='./config.yaml',
         metavar='STRING')
@@ -162,10 +160,7 @@ def main(argv):
                 monpathfound = True
                 monloc = monpath + package_name + '/' + package_name + '/'
                 packageloc = monpath + package_name + '/'
-                            
-                                
-                        
-                    
+
             if 'nodes' in config:  # check if there are nodes to be instrumented
                 for node in config['nodes']:
                     if 'name' not in node['node'] or 'package' not in node['node'] or 'path' not in node['node']:
@@ -176,7 +171,6 @@ def main(argv):
                         return
                     nodes[node['node']['name']] = (node['node']['package'], node['node']['path'], [])
             if 'monitors' in config:  # check if there are monitors to create
-                
                 ids = []
                 for monitor in config['monitors']:
 
@@ -253,12 +247,12 @@ def main(argv):
                     monGen = MonitorGenerator()
                     monGen.generate_monitor_package(monitor['monitor']['id'], monitor['monitor']['topics'], monitor['monitor']['services'], monitor['monitor']['log'], url, port, oracle_action, silent, warning)
                 lfg = LaunchFileGen()
-                launchpath = 'code/monitor/launch/'
+                launchpath = get_code_path() + '/monitor/launch/'
                 lfg.write_monitor_launch(ids, 'monitor', launchpath)
                 lfg.instrument_node_launch_files(nodes)
                 # now that we are all done lets go copy the entire folder
-                print('copying files to '+monpath)
-                copytree('code/',monpath)
+                print('copying files to ' + monpath)
+                copytree(get_code_path(), monpath)
 
                 for am in action_monitors:
                     generate_action_monitor_package(am, monpath)
@@ -267,5 +261,5 @@ def main(argv):
             print(exc)
 
 
-if __name__ == '__main__':
-    main(sys.argv)
+if __name__ == "__main__":
+    main(sys.argv[1:])

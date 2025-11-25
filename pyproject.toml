@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=61.0.0", "wheel", "pip>=24.2"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "MOON"
+version = "0.0.1"
+description = ""
+readme = "README.md"
+authors = [
+    {name = "Karin Pedemonte", email = "karim.pedemonte@edu.unige.it"}
+]
+license = {file = "LICENSE"}
+classifiers = [
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.12",
+]
+keywords = []
+dependencies = [
+    "websocket_client",
+    "rospy_message_converter",
+    "pyyaml",
+    "reelay",
+    "jinja2",
+    "cookiecutter",
+    "jedi",
+    "prompt-toolkit",
+    # Extra dependencies
+    "PyGObject==3.50.0",
+]
+requires-python = ">=3.10"
+
+[tool.setuptools.package-data]
+"MOON" = ["resources"]
+
+[project.scripts]
+moon_generator = "generator_main:main"
