@@ -110,7 +110,8 @@ class CodeGenAndROSUtils():
     def get_ros_time_line(self):
         return 'float(self.get_clock().now().to_msg().sec) + float((self.get_clock().now().to_msg().nanosec) / 1000000000)'
         
-    def ros_subscriber_creation_command(self,subname,subtype,callbackname,qsize,doStringName=True):
+    def ros_subscriber_creation_command(self,subname,subtype,callbackname,qsize,qos_reliable, doStringName=True):
+        # TODO: Rework this!
         if doStringName:
             return "self.create_subscription(topic='{tname}',msg_type={ttype},callback={cbname},qos_profile={qs})\n".format(tname=subname,ttype=subtype,cbname=callbackname,qs=qsize)
         else:
@@ -184,7 +185,8 @@ class MonitorGenerator():
             package = topic_msg_details['type'][0:topic_msg_details['type'].rfind('.')]
             type = topic_msg_details['type'][topic_msg_details['type'].rfind('.') + 1:]
             topic = topic_msg_details['name']
-            tp_lists[topic] = {'package':package, 'type':type}
+            # TODO: Make qos configurable!
+            tp_lists[topic] = {'package':package, 'type':type, 'qos': 'reliable'}
         return tp_lists
      
     def get_subscribers(self, topics_with_types_and_action):
@@ -212,9 +214,12 @@ class MonitorGenerator():
     def create_subscriber_line(self,name,tinfo,tmsg_type,cbname):
         tpname = name
         subtype = tmsg_type['type']
+        qos_reliable = True
+        if 'qos' in tmsg_type and tmsg_type['qos'] == 'transient_local':
+            qos_reliable = False
         if tinfo['remapped']:
             tpname = self.get_remapped_name(name)
-        line = self.codegenutils.ros_subscriber_creation_command(tpname, subtype, cbname, self.queue_size)
+        line = self.codegenutils.ros_subscriber_creation_command(tpname, subtype, cbname, self.queue_size, qos_reliable)
         return line
     
     def create_server_service_line(self,name,sinfo,smsg_type,cbname):
@@ -1105,9 +1110,7 @@ class MonitorGenerator():
         
         self.codegenutils.check_indent("create main func ")
         return lines
-     
-    
-    
+
     def create_python_main_lines(self):
         self.codegenutils.reset_indent("create python main func ")
         lineprefix = ''
@@ -1117,24 +1120,24 @@ class MonitorGenerator():
         lines.append(lineprefix+line)
         self.codegenutils.check_indent("create python main func ")
         return lines   
-    
 
-
-                  
     def create_import_lines(self, tp_lists, srv_lists):
+        ''' generate import lines for all the other message types '''
         plain_import = ['json',
                         'yaml',
                         'websocket',
                         'sys',
                         'rclpy',
                         'rosidl_runtime_py']
-        from_import = {'rclpy.node':'Node',
-                     'threading':'*',
-                     'rosmonitoring_interfaces.msg':'MonitorError',
-                     'std_msgs.msg':'*',
-                     'rclpy.callback_groups':'MutuallyExclusiveCallbackGroup'}
+        from_import = {
+            'rclpy.node':'Node',
+            'threading':'*',
+            'rosmonitoring_interfaces.msg':'MonitorError',
+            'std_msgs.msg':'*',
+            'rclpy.callback_groups':'MutuallyExclusiveCallbackGroup',
+            'rclpy.qos': 'QoSProfile, ReliabilityPolicy, DurabilityPolicy'
+        }
         
-        ''' generate import lines for all the other message types '''
         for tp in tp_lists:
             package = tp_lists[tp]['package']
             # type = tp_lists[tp]['type']
