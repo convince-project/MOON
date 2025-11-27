@@ -128,6 +128,8 @@ def main(argv=None):
     tl_oracle = None
     last_res = True
 
+    print(f"Verifying property \n {property.PROPERTY}")
+
     if args.discrete:
         model = 'discrete'
     elif args.dense:

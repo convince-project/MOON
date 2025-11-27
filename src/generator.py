@@ -111,12 +111,14 @@ class CodeGenAndROSUtils():
         return 'float(self.get_clock().now().to_msg().sec) + float((self.get_clock().now().to_msg().nanosec) / 1000000000)'
         
     def ros_subscriber_creation_command(self,subname,subtype,callbackname,qsize,qos_reliable, doStringName=True):
-        # TODO: Rework this!
+        """Create a topic subscriber with related callback and QoS settings."""
+        qos_reliability_str = "ReliabilityPolicy.RELIABLE" if qos_reliable else "ReliabilityPolicy.BEST_EFFORT"
+        qos_string = f"QoSProfile(reliability={qos_reliability_str}, durability=DurabilityPolicy.VOLATILE, depth={qsize})"
         if doStringName:
-            return "self.create_subscription(topic='{tname}',msg_type={ttype},callback={cbname},qos_profile={qs})\n".format(tname=subname,ttype=subtype,cbname=callbackname,qs=qsize)
+            return "self.create_subscription(topic='{tname}',msg_type={ttype},callback={cbname},qos_profile={qs})\n".format(tname=subname,ttype=subtype,cbname=callbackname,qs=qos_string)
         else:
-            return "self.create_subscription(topic={tname},msg_type={ttype},callback={cbname},qos_profile={qs})\n".format(tname=subname,ttype=subtype,cbn=callbackname,qs=qsize)    
-        
+            return "self.create_subscription(topic={tname},msg_type={ttype},callback={cbname},qos_profile={qs})\n".format(tname=subname,ttype=subtype,cbname=callbackname,qs=qos_string)
+
     def ros_server_service_creation_command(self,srvname,srvtype,callbackname,doStringName=True):
         if doStringName:
             return "self.create_service({srvtype}, '{srvname}', {cbname}, callback_group=MutuallyExclusiveCallbackGroup())\n".format(srvname=srvname,srvtype=srvtype,cbname=callbackname)
@@ -185,8 +187,9 @@ class MonitorGenerator():
             package = topic_msg_details['type'][0:topic_msg_details['type'].rfind('.')]
             type = topic_msg_details['type'][topic_msg_details['type'].rfind('.') + 1:]
             topic = topic_msg_details['name']
-            # TODO: Make qos configurable!
-            tp_lists[topic] = {'package':package, 'type':type, 'qos': 'reliable'}
+            qos = topic_msg_details.get('qos', 'reliable')
+            assert qos in ('reliable', 'best_effort'), f"Unexpected qos value {qos}."
+            tp_lists[topic] = {'package':package, 'type':type, 'qos': qos}
         return tp_lists
      
     def get_subscribers(self, topics_with_types_and_action):
@@ -214,9 +217,7 @@ class MonitorGenerator():
     def create_subscriber_line(self,name,tinfo,tmsg_type,cbname):
         tpname = name
         subtype = tmsg_type['type']
-        qos_reliable = True
-        if 'qos' in tmsg_type and tmsg_type['qos'] == 'transient_local':
-            qos_reliable = False
+        qos_reliable = tmsg_type['qos'] == 'reliable'
         if tinfo['remapped']:
             tpname = self.get_remapped_name(name)
         line = self.codegenutils.ros_subscriber_creation_command(tpname, subtype, cbname, self.queue_size, qos_reliable)
