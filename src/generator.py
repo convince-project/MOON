@@ -187,9 +187,9 @@ class MonitorGenerator():
             package = topic_msg_details['type'][0:topic_msg_details['type'].rfind('.')]
             type = topic_msg_details['type'][topic_msg_details['type'].rfind('.') + 1:]
             topic = topic_msg_details['name']
-            qos = topic_msg_details.get('qos', 'reliable')
+            qos = topic_msg_details.get('qos_reliability', 'reliable')
             assert qos in ('reliable', 'best_effort'), f"Unexpected qos value {qos}."
-            tp_lists[topic] = {'package':package, 'type':type, 'qos': qos}
+            tp_lists[topic] = {'package':package, 'type':type, 'qos_reliability': qos}
         return tp_lists
      
     def get_subscribers(self, topics_with_types_and_action):
@@ -217,7 +217,7 @@ class MonitorGenerator():
     def create_subscriber_line(self,name,tinfo,tmsg_type,cbname):
         tpname = name
         subtype = tmsg_type['type']
-        qos_reliable = tmsg_type['qos'] == 'reliable'
+        qos_reliable = tmsg_type['qos_reliability'] == 'reliable'
         if tinfo['remapped']:
             tpname = self.get_remapped_name(name)
         line = self.codegenutils.ros_subscriber_creation_command(tpname, subtype, cbname, self.queue_size, qos_reliable)
