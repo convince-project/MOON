@@ -1420,6 +1420,7 @@ class LaunchFileGen(object):
     
     def write_monitor_launch(self,monitor_ids,package_name,loc):
         root_elem = self.create_monitor_launch(monitor_ids, package_name)
+        os.mkdir(loc)
         self.write_launch_file(root_elem, loc+'monitor.launch')
         
     def write_launch_file(self,root_elem,locfn):
