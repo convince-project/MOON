@@ -4,13 +4,13 @@
 Tutorial
 --------
 
-An example of a running monitoring execution can be found within the ``example/tutorial`` directory of the repository. At least three terminals are needed: one for the monitor, one for the oracle and one to execute the ROS topic to be monitored.
+An example of a running monitoring execution can be found within the ``examples/tutorial`` directory of the repository. At least three terminals are needed: one for the monitor, one for the oracle and one to execute the ROS topic to be monitored.
 
 In the first terminal, execute the following commands inside the MOON directory, after sourcing the ROS distribution setup file
 
 .. code-block:: bash
 
-    $ moon_generator ./example/tutorial/monitor_example.yaml
+    $ moon_generator ./examples/tutorial/monitor_example.yaml
     $ cd ./monitor_ws
     $ colcon build
     $ source install/setup.bash
@@ -19,7 +19,7 @@ Then, in another terminal run
 
 .. code-block:: bash
 
-    $ moon_oracle --online --dense --port 8080 --property ./example/tutorial/property_example
+    $ moon_oracle --online --dense --port 8080 --property ./examples/tutorial/property_example
 
 While the oracle is running, we then run the monitor in the previous terminal
 
