@@ -23,6 +23,7 @@ In order to use the tool, we need to define a monitor configuration, such as the
             - name: my_topic # name of the topic
             type: std_msgs.msg.String # type of the topic
             action: log
+            qos_reliability: reliable  # topic reliability
         services: # list of services the monitor intercepts
             - name: my_service # name of the service
             type: std_msgs.msg.String # type of the service
@@ -32,11 +33,11 @@ In order to use the tool, we need to define a monitor configuration, such as the
             type: custom_action_interfaces.action.MyAction # type of the action
             action: log
 
-Then, we need to generate the corresponding monitor, by invoking the ``generator`` command.
+Then, we need to generate the corresponding monitor, by invoking the ``moon_generator`` command.
 
 .. code-block:: bash
 
-    $ /path/to/MOON/src/generator --config-file /path/to/monitor_config.yaml
+    $ moon_generator --config-file /path/to/monitor_config.yaml
 
 Now we need to build the newly created ROS package, so we run
 
@@ -67,19 +68,21 @@ Next, we need to define a property to be verified on the monitored topics and/or
         predicates['p'] = message['p']
         return predicates
 
+The PastMTL property needs to be defined as a string assigned to the ``PROPERTY`` variable, following the `Reelay syntax <https://doganulus.github.io/reelay/rye/>`_.
+
 Then, we need to run the oracle by specifying the property and whether the time events are evenly spaced out or not, by setting either the ``--dense`` or ``--discrete`` flag.
 
 .. code-block:: bash
 
-    $ /path/to/MOON/src/ROSMonitoring/oracle/TLOracle/oracle.py --online --property /path/to/prop --port 8080 --dense
+    $ moon_oracle --online --property /path/to/prop --port 8080 --dense
 
 We can now run the monitor, with
 
 .. code-block:: bash
     
     $ cd /path/to/monitor_ws
-    $ . install/setup.bash
-    $ ros2 launch src/monitor/launch/monitor.launch
+    $ source install/setup.bash
+    $ ros2 run monitor my_monitor
 
 In case any action monitors were defined, we need to also start the corresponding node in the same workspace
 

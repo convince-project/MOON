@@ -22,14 +22,36 @@
 
 import os
 import sys
-sys.path.append(os.path.join(os.path.dirname(__file__),'code/monitor/'))
 import yaml
 import xml.etree.ElementTree as ET
-from jedi.inference.names import AbstractNameDefinition
-from prompt_toolkit.layout.controls import GetLinePrefixCallable
-from gi._gtktemplate import Child
-import setup_resources as sr
+# from jedi.inference.names import AbstractNameDefinition
+# from prompt_toolkit.layout.controls import GetLinePrefixCallable
+# from gi._gtktemplate import Child
+from importlib.resources import files as resource_files
 
+
+def get_code_path() -> str:
+    """Try to get the absolute path to the code folder, if possible. Otherwise, resort to the relative one."""
+    path_base = ''
+    try:
+        path_base = str(resource_files("MOON").joinpath("code"))
+    except:
+        path_base = os.path.join('MOON', 'code')
+    return path_base
+
+
+def get_moon_path() -> str:
+    """Try to get the absolute path to MOON's src folder, if possible. Otherwise, resort to the current path."""
+    path_base = ''
+    try:
+        path_base = str(resource_files("MOON").joinpath(".."))
+    except:
+        path_base = '.'
+    return path_base
+
+sys.path.append(os.path.join(get_code_path(), 'monitor'))
+
+import setup_resources as sr
 
 class CodeGenAndROSUtils():
 
@@ -38,16 +60,15 @@ class CodeGenAndROSUtils():
         self.indent_level = 0 
         self.new_line = '\n'
         self.debug = False
-        
+
     def reset_indent(self,msg):
         if self.debug:
             print(msg+" Resetting indent level from {0} to 0".format(self.indent_level))
         self.indent_level=0
-        
+
     def check_indent(self,msg):
         if self.debug:
             print(msg+" Indent level: {0}".format(self.indent_level))
-
 
     def inc_indent(self, current_indent):
         self.indent_level+=1
@@ -67,7 +88,6 @@ class CodeGenAndROSUtils():
             self.indent_level-=1
             return new_indent
     
-    
     ''' this is an array of lines'''
 
     def write_lines(self, lines, monitor_id,monloc):
@@ -77,30 +97,28 @@ class CodeGenAndROSUtils():
         
     def create_python_header(self):
         return '#!/usr/bin/env python\n'    
-     
-     
+
     def append_lines_to_list_with_prefix(self,linelist,lines,lineprefix):
         for l in lines:
             linelist.append(lineprefix+l)
-        return linelist
-    
-        
+        return linelist    
+
     # ROS things 
     def get_ros_info_logging_line(self, text):
         return 'self.get_logger().info({0})\n'.format(text)
     
     def get_ros_time_line(self):
         return 'float(self.get_clock().now().to_msg().sec) + float((self.get_clock().now().to_msg().nanosec) / 1000000000)'
-
         
-        
-        
-    def ros_subscriber_creation_command(self,subname,subtype,callbackname,qsize,doStringName=True):
+    def ros_subscriber_creation_command(self,subname,subtype,callbackname,qsize,qos_reliable, doStringName=True):
+        """Create a topic subscriber with related callback and QoS settings."""
+        qos_reliability_str = "ReliabilityPolicy.RELIABLE" if qos_reliable else "ReliabilityPolicy.BEST_EFFORT"
+        qos_string = f"QoSProfile(reliability={qos_reliability_str}, durability=DurabilityPolicy.VOLATILE, depth={qsize})"
         if doStringName:
-            return "self.create_subscription(topic='{tname}',msg_type={ttype},callback={cbname},qos_profile={qs})\n".format(tname=subname,ttype=subtype,cbname=callbackname,qs=qsize)
+            return "self.create_subscription(topic='{tname}',msg_type={ttype},callback={cbname},qos_profile={qs})\n".format(tname=subname,ttype=subtype,cbname=callbackname,qs=qos_string)
         else:
-            return "self.create_subscription(topic={tname},msg_type={ttype},callback={cbname},qos_profile={qs})\n".format(tname=subname,ttype=subtype,cbn=callbackname,qs=qsize)    
-        
+            return "self.create_subscription(topic={tname},msg_type={ttype},callback={cbname},qos_profile={qs})\n".format(tname=subname,ttype=subtype,cbname=callbackname,qs=qos_string)
+
     def ros_server_service_creation_command(self,srvname,srvtype,callbackname,doStringName=True):
         if doStringName:
             return "self.create_service({srvtype}, '{srvname}', {cbname}, callback_group=MutuallyExclusiveCallbackGroup())\n".format(srvname=srvname,srvtype=srvtype,cbname=callbackname)
@@ -169,7 +187,9 @@ class MonitorGenerator():
             package = topic_msg_details['type'][0:topic_msg_details['type'].rfind('.')]
             type = topic_msg_details['type'][topic_msg_details['type'].rfind('.') + 1:]
             topic = topic_msg_details['name']
-            tp_lists[topic] = {'package':package, 'type':type}
+            qos = topic_msg_details.get('qos_reliability', 'reliable')
+            assert qos in ('reliable', 'best_effort'), f"Unexpected qos value {qos}."
+            tp_lists[topic] = {'package':package, 'type':type, 'qos_reliability': qos}
         return tp_lists
      
     def get_subscribers(self, topics_with_types_and_action):
@@ -197,9 +217,10 @@ class MonitorGenerator():
     def create_subscriber_line(self,name,tinfo,tmsg_type,cbname):
         tpname = name
         subtype = tmsg_type['type']
+        qos_reliable = tmsg_type['qos_reliability'] == 'reliable'
         if tinfo['remapped']:
             tpname = self.get_remapped_name(name)
-        line = self.codegenutils.ros_subscriber_creation_command(tpname, subtype, cbname, self.queue_size)
+        line = self.codegenutils.ros_subscriber_creation_command(tpname, subtype, cbname, self.queue_size, qos_reliable)
         return line
     
     def create_server_service_line(self,name,sinfo,smsg_type,cbname):
@@ -1090,9 +1111,7 @@ class MonitorGenerator():
         
         self.codegenutils.check_indent("create main func ")
         return lines
-     
-    
-    
+
     def create_python_main_lines(self):
         self.codegenutils.reset_indent("create python main func ")
         lineprefix = ''
@@ -1102,24 +1121,24 @@ class MonitorGenerator():
         lines.append(lineprefix+line)
         self.codegenutils.check_indent("create python main func ")
         return lines   
-    
 
-
-                  
     def create_import_lines(self, tp_lists, srv_lists):
+        ''' generate import lines for all the other message types '''
         plain_import = ['json',
                         'yaml',
                         'websocket',
                         'sys',
                         'rclpy',
                         'rosidl_runtime_py']
-        from_import = {'rclpy.node':'Node',
-                     'threading':'*',
-                     'rosmonitoring_interfaces.msg':'MonitorError',
-                     'std_msgs.msg':'*',
-                     'rclpy.callback_groups':'MutuallyExclusiveCallbackGroup'}
+        from_import = {
+            'rclpy.node':'Node',
+            'threading':'*',
+            'rosmonitoring_interfaces.msg':'MonitorError',
+            'std_msgs.msg':'*',
+            'rclpy.callback_groups':'MutuallyExclusiveCallbackGroup',
+            'rclpy.qos': 'QoSProfile, ReliabilityPolicy, DurabilityPolicy'
+        }
         
-        ''' generate import lines for all the other message types '''
         for tp in tp_lists:
             package = tp_lists[tp]['package']
             # type = tp_lists[tp]['type']
@@ -1351,13 +1370,11 @@ class MonitorGenerator():
     
     
     def create_package_xml(self,tp_lists,location):
-        
         child_to_insert_after = 11
-        tree = ET.parse(location+".packagexml")
+        tree = ET.parse(location+"/.packagexml")
         root = tree.getroot()
         children = list(root)
-        
-            
+ 
         # so now we insert the relevant packages
         pkgs_so_far = []
         for t in tp_lists:
@@ -1373,8 +1390,8 @@ class MonitorGenerator():
         tree.write(location+'package.xml')
         
     def generate_monitor_package(self,monitor_id, topics_with_types_and_action, services_with_types_and_action, log, url, port, oracle_action, silent, warning):
-        monloc = 'code/monitor/monitor/'
-        packageloc = 'code/monitor/'
+        monloc = os.path.join(get_code_path(), 'monitor', 'monitor') + '/'
+        packageloc = os.path.join(get_code_path(), 'monitor') + '/'
         lines = self.create_mon_file_lines(topics_with_types_and_action, services_with_types_and_action, monitor_id, silent, oracle_action, url, port, log)
         if services_with_types_and_action:
             lines.extend(self.create_service_node())
@@ -1403,6 +1420,7 @@ class LaunchFileGen(object):
     
     def write_monitor_launch(self,monitor_ids,package_name,loc):
         root_elem = self.create_monitor_launch(monitor_ids, package_name)
+        os.mkdir(loc)
         self.write_launch_file(root_elem, loc+'monitor.launch')
         
     def write_launch_file(self,root_elem,locfn):

@@ -8,26 +8,32 @@ MOON will notify violations of properties and that other tools can be invoked to
 
 ### Prerequisites
 
-`pip` and an installation of ROS2 up until [Jazzy Jalisco](https://docs.ros.org/en/jazzy/index.html) is required, and so are the following Python packages:
-- `websocket_client`
-- `rospy_message_converter`
-- `pyyaml`
-- `reelay`
-- `jinja2`
-- `cookiecutter`
+`pip` and an installation of ROS2 up until [Jazzy Jalisco](https://docs.ros.org/en/jazzy/index.html) are required.
 
 In order for Reelay to work, an installation of the [`boost`](https://www.boost.org/) library is necessary.
 
-### Installation
+On Ubuntu 24.04, this can be done with
+``` bash
+$ sudo apt install libboost-all-dev libcairo2-dev
+```
 
-We need to clone the MOON repository, making sure the ROSMonitoring submodule is cloned too by using `--recursive`.
+### Clone the MOON repo
+
+We need to clone the MOON repository with
 ```sh
-$ git clone --recursive https://github.com/convince-project/MOON.git
+$ git clone https://github.com/convince-project/MOON.git
+```
+
+### Installation
+MOON can be installed as a Python package with
+
+```bash
+$ pip install MOON/
 ```
 
 ### Usage
 
-In order to use the tool, we need to define a monitor configuration, such as the following:
+In order to use the tool, we need to define a monitor configuration, like in the following:
 
 ```yaml
 path: /path/to/monitor/workspace/src/ # path to the ros workspace of the monitor package
@@ -45,6 +51,7 @@ monitors: # list of generated monitors
         - name: my_topic # name of the topic
           type: std_msgs.msg.String # type of the topic
           action: log
+          qos_reliability: reliable  # topic reliability (reliable/best_effort)
       services: # list of services the monitor intercepts
         - name: my_service # name of the service
           type: std_msgs.msg.String # type of the service
@@ -54,10 +61,12 @@ monitors: # list of generated monitors
           type: custom_action_interfaces.action.MyAction # type of the action
           action: log
 ```
- Then, we need to generate the corresponding monitor, by invoking the `generator` command.
+
+
+Then, we need to generate the corresponding monitor, by invoking the `moon_generator` command.
 
  ```bash
- $ /path/to/MOON/src/generator --config-file /path/to/monitor_config.yaml
+ $ moon_generator --config-file /path/to/monitor_config.yaml
  ```
 
  Now we need to build the newly created ROS package, so we run
@@ -87,18 +96,19 @@ def abstract_message(message):
     predicates['p'] = message['p']
     return predicates
 ```
+The PastMTL property needs to be defined as a string assigned to the `PROPERTY` variable, following the [Reelay syntax](https://doganulus.github.io/reelay/rye/).
 
 Then, we need to run the oracle by specifying the property and whether the time events are evenly spaced out or not, by setting either the `--dense` or `--discrete` flag.
 
 ```bash
-$ /path/to/MOON/src/ROSMonitoring/oracle/TLOracle/oracle.py --online --property /path/to/prop --port 8080 --dense
+$ moon_oracle --online --property /path/to/prop --port 8080 --dense
 ```
 
 We can now run the monitor, with
 ```bash
 $ cd /path/to/monitor_ws
-$ . install/setup.bash
-$ ros2 launch src/monitor/launch/monitor.launch
+$ source install/setup.bash
+$ ros2 run monitor my_monitor
 ```
 
 In case any action monitors were defined, we need to also start the corresponding node in the same workspace
@@ -110,4 +120,27 @@ Now the monitor will be running, and when the monitored channel is running, it w
 
 ## Running example
 
-An example of a running monitoring execution can be found within the `example` directory of the repository. It can be run by following the instructions within.
+An example of a running monitoring execution can be found within the `example/tutorial` directory of the repository. At least three terminals are needed: one for the monitor, one for the oracle and one to execute the ROS topic to be monitored.
+
+In the first terminal, execute the following commands inside the MOON directory, after sourcing the ROS distribution setup file
+```bash
+$ moon_generator ./example/tutorial/monitor_example.yaml
+$ cd ./monitor_ws
+$ colcon build
+$ source install/setup.bash
+```
+Then, in another terminal run
+```bash
+$ moon_oracle --online --dense --port 8080 --property ./example/tutorial/property_example
+```
+While the oracle is running, we then run the monitor in the previous terminal
+```bash
+$ ros2 run monitor example_monitor
+```
+
+Now the monitor is connected to the oracle, waiting for messages to be published.
+In order to see it in action, we need to run the chatter topic publisher from the ROS demo package with
+```bash
+$ ros2 run demo_nodes_cpp talker
+```
+The monitor now should be publishing the verdict on the property on each message it intercepts.
