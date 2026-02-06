@@ -9,7 +9,8 @@ RUN apt install -y libboost-all-dev libcairo2-dev python3-pip curl tar nano ros-
 # Add MOON
 RUN mkdir -p /MOON
 COPY . /MOON
-RUN pip3 install /MOON
+RUN pip install --upgrade pip
+RUN pip install /MOON
 
 # Set up the entrypoint.
 CMD /bin/bash
