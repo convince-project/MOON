@@ -1,0 +1,37 @@
+path: {{ monitor_workspace }}
+
+monitors:
+  - monitor:
+      id: {{ monitor_name }}
+      log: ./log.txt
+      silent: False
+      oracle:
+        port: {{ oracle_port }}
+        url: 127.0.0.1
+        action: nothing
+      {% if topics is defined and topics|length > 0 %}
+      topics:
+        {% for topic in topics %}
+        - name: {{ topic["name"] }}
+          type: {{ topic["type"] }}
+          action: log
+          qos_reliability: {{ topic["qos"] }}
+        {% endfor %}
+      {% endif %}
+      {% if services is defined and services|length > 0 %}
+      services:
+        {% for service in services %}
+        - name: {{ service["name"] }}
+          type: {{ service["type"] }}
+          action: log
+        {% endfor %}
+      {% endif %}
+      {% if actions is defined and actions|length > 0 %}
+      actions:
+        {% for action in actions %}
+        - name: {{ action["name"] }}
+          type: {{ action["type"] }}
+          action: log
+        {% endfor %}
+      {% endif %}
+

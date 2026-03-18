@@ -1,0 +1,40 @@
+import oracle
+{% if actions %}
+import json
+{% endif %}
+
+# property to verify
+PROPERTY = "{{ property }}"
+
+# declaration of predicates used in the property (initialization at time 0)
+predicates = dict(
+    time = 0,
+    {% for predicate in predicates %}
+    {{ predicate.name }} = {{ predicate.starting_value }},
+    {% endfor %}
+    {% if pattern == "recurrence" %}
+    clock = False,
+    {% endif %}
+)
+
+# function to abstract a dictionary (obtained from Json message) into a list of predicates
+def abstract_message(message):
+    predicates["time"] = message["time"]
+    {% if actions %}
+    message_data = json.loads(message["data"])
+    {% endif %}
+    {% for predicate in predicates %}
+    {% if predicate.parent_interface["tag"] != "action"%}
+    predicates["{{ predicate.name }}"] = message{{ predicate.field_name }} if message[f"{{ predicate.parent_interface["tag"] }}"] == "{{ predicate.parent_interface["name"] }}" else predicates["{{predicate.name}}"]
+    {% else %}
+    try:
+        predicates["{{ predicate.name }}"] = message_data["payload"]{{ predicate.field_name }} if message["topic"] == "{{ predicate.parent_interface["name"] }}/messages" else predicates["{{predicate.name}}"]
+    except:
+        predicates["{{ predicate.name }}"] = predicates["{{ predicate.name }}"]
+    {% endif %}
+    {% endfor %}
+    {% if pattern == "recurrence" %}
+    predicates["clock"] = True if message["topic"] == "{{ clock }}" else False
+    {% endif %}
+    return predicates
+
