@@ -33,5 +33,6 @@ requires-python = ">=3.10"
 "MOON" = ["resources", "code/**/*"]
 
 [project.scripts]
+moon_config = "config_generator:main"
 moon_generator = "generator_main:main"
 moon_oracle = "oracle:main"
