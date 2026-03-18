@@ -255,7 +255,7 @@ def _get_interface_from_predicate(predicate: str, interfaces: Dict) -> Dict:
                 return i
     
 
-def main(argv):
+def main(argv = None):
     parser = argparse.ArgumentParser(
         description="Generate MOON compatible configuration files from an XML specification",
         formatter_class=argparse.RawTextHelpFormatter)
