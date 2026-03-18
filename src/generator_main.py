@@ -127,9 +127,15 @@ def copytree(src, dst, symlinks=False, ignore=None):
         s = os.path.join(src, item)
         d = os.path.join(dst, item)
         if os.path.isdir(s):
-            shutil.copytree(s, d, symlinks, ignore)
+            shutil.copytree(s, d, symlinks, ignore, dirs_exist_ok=True)
         else:
             shutil.copy2(s, d)
+
+def cleanup_templates():
+    launch_path = get_code_path() + '/monitor/launch/'
+    launch_file = launch_path + "monitor.launch"
+    os.remove(launch_file)
+    os.rmdir(launch_path)
 
 def main(argv = None):
     parser = argparse.ArgumentParser(
@@ -176,7 +182,7 @@ def main(argv = None):
                 ids = []
                 for monitor in config['monitors']:
 
-                    if 'id' not in monitor['monitor'] or ('topics' not in monitor['monitor'] and 'services' not in monitor['monitor']) or 'log' not in monitor['monitor']:
+                    if 'id' not in monitor['monitor'] or ('topics' not in monitor['monitor'] and 'services' not in monitor['monitor'] and 'actions' not in monitor['monitor']) or 'log' not in monitor['monitor']:
                         print('Each monitor in the configuration file must contain the id, log and list of the topics (or services) fields.')
                         return
                     if 'oracle' in monitor['monitor']  and ('port' not in monitor['monitor']['oracle'] or 'url' not in monitor['monitor']['oracle'] or 'action' not in monitor['monitor']['oracle']):
@@ -274,6 +280,8 @@ def main(argv = None):
 
                 for am in action_monitors:
                     generate_action_monitor_package(am, monpath)
+                
+                cleanup_templates()
                 
         except yaml.YAMLError as exc:
             print(exc)
