@@ -3,14 +3,13 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 # Install requirements
 ARG DEBIAN_FRONTEND=noninteractive
-RUN apt update && \
-    apt install -y python3-pip curl tar nano ros-jazzy-example-interfaces ros-jazzy-plotjuggler && \
-    apt install -y python3-jinja2 python3-cookiecutter python3-jedi python3-prompt-toolkit
-RUN pip3 install --break-system-packages websocket_client rospy_message_converter pyyaml reelay
+RUN apt update
+RUN apt install -y libboost-all-dev libcairo2-dev python3-pip curl tar nano ros-jazzy-example-interfaces
 
 # Add MOON
 RUN mkdir -p /MOON
 COPY . /MOON
+RUN pip install -e /MOON --break-system-packages
 
 # Set up the entrypoint.
 CMD /bin/bash

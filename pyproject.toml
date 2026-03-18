@@ -10,7 +10,7 @@ readme = "README.md"
 authors = [
     {name = "Karim Pedemonte", email = "karim.pedemonte@edu.unige.it"}
 ]
-license = {file = "LICENSE"}
+license-files = ["LICENSE"]
 classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.12",
