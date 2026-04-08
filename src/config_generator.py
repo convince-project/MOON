@@ -175,6 +175,7 @@ def _process_properties(properties_node: XmlElement) -> List[Dict]:
         property_id = property.attrib["id"]
         pattern_string = property.attrib["pattern"]
         events = []
+        formatted_events = []
         scope = ""
         scope_events = []
         time = None
@@ -182,8 +183,8 @@ def _process_properties(properties_node: XmlElement) -> List[Dict]:
         for child in property:
             tag = child.tag
             if tag == "event":
-                formatted_event = _separate_predicates(child.text)
-                events.append(formatted_event)
+                formatted_events.append(_separate_predicates(child.text))
+                events.append(child.text)
             if tag == "events":
                 for event in child:
                     events.append(event.text)
@@ -231,7 +232,7 @@ def _process_properties(properties_node: XmlElement) -> List[Dict]:
                 raise Exception
             
         reelay_compatible_events = []
-        for event in events:
+        for event in formatted_events:
             reelay_compatible_events.append(event.replace("==", ":"))
 
         property_pattern = PatternInfo(
