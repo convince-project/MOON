@@ -103,7 +103,7 @@ def _process_ports(ports_node: XmlElement) -> Tuple[List[Dict], Optional[Dict[st
                         var.attrib["expr"],
                         False,
                         parent_interface={
-                            "name": interface_name if interface_name.startswith("/") else f"/{interface_name}",
+                            "name": interface_name,# if interface_name.startswith("/") else f"/{interface_name}",
                             "tag": tag,
                             "event": interface.attrib["event"],
                         },
