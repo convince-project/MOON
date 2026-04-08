@@ -140,6 +140,16 @@ def _extract_variable(event: str, separator: str) -> str:
         return event.split(separator)[0].strip()
     return event.strip()
 
+def _separate_predicates(event: str) -> str:
+    predicates = []
+    if "&&" in event:
+        predicates = event.split("&&")
+    nps = []
+    for p in predicates:
+        nps.append("{ "+p.strip()+" }")
+    event = " && ".join(nps)
+    return event
+
 def _predicates_from_event(event: str) -> List[str]:
     predicates = []
     if any(x in event for x in ["&&", "||"]):
@@ -172,7 +182,8 @@ def _process_properties(properties_node: XmlElement) -> List[Dict]:
         for child in property:
             tag = child.tag
             if tag == "event":
-                events.append(child.text)
+                formatted_event = _separate_predicates(child.text)
+                events.append(formatted_event)
             if tag == "events":
                 for event in child:
                     events.append(event.text)

@@ -23,14 +23,14 @@ class Scope(Enum):
     AFTER = auto()
 
 class PropertyTemplates:
-    MTL_UNIVERSALITY_GLOBALLY: str = "historically{% if time != None %}[:{{ time }}]{% endif %}({ {{event}} })"
-    MTL_UNIVERSALITY_AFTER: str = "historically{% if time != None %}[:{{ time }}]{% endif %}( once({ {{scope_event}} }) -> { {{event}} })"
-    MTL_ABSENCE_GLOBALLY: str = "historically{% if time != None %}[:{{ time }}]{% endif %}(not({ {{event}} }))"
-    MTL_ABSENCE_AFTER: str = "historically{% if time != None %}[:{{ time }}]{% endif %}( once({ {{scope_event}} }) -> not({ {{event}} }))"
-    MTL_RESPONSE_GLOBALLY: str = "historically( not( not({ {{ response }} }) since{% if time != None %}[{{ time }}:]{% endif %} ({ {{ request }} }) ) )"
-    MTL_RECURRENCE_GLOBALLY: str = "historically( (once[{{time}}:] (not {false}) ) -> (once[:{{time}}]{ {{event}} }) )"
-    MTL_PRECEDENCE_GLOBALLY: str = "historically( ({ {{second}} }) -> once{% if after != None and within != None %}[{{after}}:{{within}}]{% elif after != None %}[{{after}}:]{% elif within != None %}[:{{within}}]{% endif %}({ {{first}} }) )"
-    MTL_EXISTENCE_GLOBALLY: str = "once{% if time != None %}[:{{ time }}]{% endif %}({ {{event}} })"
+    MTL_UNIVERSALITY_GLOBALLY: str = "historically{% if time != None %}[:{{ time }}]{% endif %}( {{event}} )"
+    MTL_UNIVERSALITY_AFTER: str = "historically{% if time != None %}[:{{ time }}]{% endif %}( once({ {{scope_event}} }) ->  {{event}} )"
+    MTL_ABSENCE_GLOBALLY: str = "historically{% if time != None %}[:{{ time }}]{% endif %}(not( {{event}} ))"
+    MTL_ABSENCE_AFTER: str = "historically{% if time != None %}[:{{ time }}]{% endif %}( once({ {{scope_event}} }) -> not( {{event}} ))"
+    MTL_RESPONSE_GLOBALLY: str = "historically( not( not( {{ response }} ) since{% if time != None %}[{{ time }}:]{% endif %} ( {{ request }} ) ) )"
+    MTL_RECURRENCE_GLOBALLY: str = "historically( (once[{{time}}:] (not {false}) ) -> (once[:{{time}}] {{event}} ) )"
+    MTL_PRECEDENCE_GLOBALLY: str = "historically( ( {{second}} ) -> once{% if after != None and within != None %}[{{after}}:{{within}}]{% elif after != None %}[{{after}}:]{% elif within != None %}[:{{within}}]{% endif %}( {{first}} ) )"
+    MTL_EXISTENCE_GLOBALLY: str = "once{% if time != None %}[{{ time }}:]{% endif %}(not {false}) -> once( {{event}} )"
 
 @dataclass()
 class PatternInfo:
